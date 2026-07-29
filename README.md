@@ -14,11 +14,11 @@
       |  rclone serve webdav         | <── TLS (Cert/Key auto-generated)
       +--------------┬---------------+
                      │
-                     │  1. Pass user/token via STDIN
+                     │  1. Pass user/password via STDIN
                      v
          [ /app/auth.py Proxy ]
                      │
-                     │  2. Verify scrypt hash
+                     │  2. Verify scrypt hash against dictionary keys
                      v
        [ /var/lib/aerodrive/config/users.json ]
                      │
@@ -41,7 +41,7 @@ Inside the container (`/var/lib/aerodrive`):
 ```
 /var/lib/aerodrive/
 ├── config/
-│   ├── users.json      # Hashed user tokens and config schema
+│   ├── users.json      # Hashed user passwords and config schema
 │   ├── cert.pem        # TLS certificate
 │   └── key.pem         # TLS private key
 └── users/
@@ -53,9 +53,12 @@ Application codebase (`/app/`):
 ```
 /app/
 ├── auth.py             # Auth proxy script called by rclone
-├── cli.py              # User & token management CLI
+├── cli.py              # User & password management CLI
 └── entrypoint.sh       # Container initialization script
 ```
+
+Workspace helper:
+- `run.sh`: Builds and runs the AeroDrive container locally.
 
 ---
 
@@ -68,13 +71,9 @@ Location: `/var/lib/aerodrive/config/users.json`
   "users": {
     "woliver99": {
       "enabled": true,
-      "tokens": [
-        {
-          "label": "thinkpad_laptop",
-          "hash": "scrypt:4a8e...:b9f1...",
-          "created_at": "2026-07-29"
-        }
-      ]
+      "passwords": {
+        "scrypt:4a8e...:b9f1...": "thinkpad_laptop"
+      }
     }
   }
 }
@@ -82,29 +81,45 @@ Location: `/var/lib/aerodrive/config/users.json`
 
 ---
 
-## 4. CLI Usage
+## 4. Quick Start (`run.sh`)
 
-To manage users and tokens, you can `exec` into the running container directly using the `aerodrive` command:
+To build and launch AeroDrive locally with Podman or Docker:
+
+```bash
+./run.sh
+```
+
+---
+
+## 5. CLI Usage
+
+To manage users and passwords, you can `exec` into the running container directly using the `aerodrive` command:
 
 ```bash
 # Add a user
-podman exec -it aerodrive aerodrive add-user woliver99
+podman exec -it aerodrive aerodrive user add woliver99
 
-# Create an authentication token
-podman exec -it aerodrive aerodrive create-token woliver99 thinkpad_laptop
+# List users
+podman exec -it aerodrive aerodrive user list
 
-# List user tokens
-podman exec -it aerodrive aerodrive list-tokens woliver99
+# Remove a user
+podman exec -it aerodrive aerodrive user remove woliver99
 
-# Revoke a token
-podman exec -it aerodrive aerodrive revoke-token woliver99 thinkpad_laptop
+# Add a user password with a note
+podman exec -it aerodrive aerodrive password add woliver99 mysecretpassword "thinkpad_laptop"
+
+# List user passwords
+podman exec -it aerodrive aerodrive password list woliver99
+
+# Remove a password by note
+podman exec -it aerodrive aerodrive password remove woliver99 "thinkpad_laptop"
 ```
 
 Alternatively, if you enter an interactive container shell (`podman exec -it aerodrive sh`), you can run `aerodrive` directly from anywhere in the PATH.
 
 ---
 
-## 5. Deployment Specification (NixOS + Podman)
+## 6. Deployment Specification (NixOS + Podman)
 
 ```nix
 { ... }:
@@ -135,3 +150,4 @@ Alternatively, if you enter an interactive container shell (`podman exec -it aer
   };
 }
 ```
+
