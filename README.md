@@ -119,7 +119,26 @@ Alternatively, if you enter an interactive container shell (`podman exec -it aer
 
 ---
 
-## 6. Deployment Specification (NixOS + Podman)
+## 6. Subpath Routing & Nginx Proxy Manager (NPM)
+
+If you serve AeroDrive behind Nginx Proxy Manager or another reverse proxy under a subpath like `/dav/` (e.g. `https://example.com/dav/`), set the `BASE_URL` environment variable:
+
+```bash
+BASE_URL="/dav/" ./run.sh
+```
+
+Or in your container environment:
+```yaml
+environment:
+  - PORT=8080
+  - BASE_URL=/dav/
+```
+
+This tells `rclone serve webdav` to expect incoming requests prefixed with `/dav/` and construct proper WebDAV XML link references.
+
+---
+
+## 7. Deployment Specification (NixOS + Podman)
 
 ```nix
 { ... }:
@@ -135,6 +154,7 @@ Alternatively, if you enter an interactive container shell (`podman exec -it aer
 
     environment = {
       "PORT" = "8080";
+      "BASE_URL" = "/dav/"; # Optional: Set subpath for reverse proxies like NPM
       "AERODRIVE_DATA_DIR" = "/var/lib/aerodrive";
     };
 

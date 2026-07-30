@@ -13,9 +13,10 @@ sudo podman rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 echo "[AeroDrive] Starting container on port $PORT..."
 mkdir -p aerodrive_data
-sudo podman run --rm \
+sudo podman run --rm -d \
   --name "$CONTAINER_NAME" \
   -p "${PORT}:8080" \
+  -e BASE_URL="${BASE_URL:-}" \
   -v ./aerodrive_data:/var/lib/aerodrive \
   "$IMAGE_NAME"
 

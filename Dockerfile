@@ -13,6 +13,7 @@ RUN chmod -R 755 /app && ln -s /app/cli.py /usr/local/bin/aerodrive
 
 ENV AERODRIVE_DATA_DIR="/var/lib/aerodrive"
 ENV PORT="8080"
+ENV BASE_URL=""
 
 EXPOSE 8080
 

@@ -24,8 +24,15 @@ fi
 
 # 3. Start Rclone Engine
 echo "[AeroDrive] Server starting on port ${PORT:-8080}..."
+BASE_URL_ARG=""
+if [ -n "$BASE_URL" ]; then
+  echo "[AeroDrive] Serving at Base URL path: $BASE_URL"
+  BASE_URL_ARG="--baseurl $BASE_URL"
+fi
+
 exec rclone serve webdav \
   --addr ":${PORT:-8080}" \
   --cert "$CONFIG_DIR/cert.pem" \
   --key "$CONFIG_DIR/key.pem" \
-  --auth-proxy "/app/auth.py"
+  --auth-proxy "/app/auth.py" \
+  $BASE_URL_ARG
