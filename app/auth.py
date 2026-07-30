@@ -24,22 +24,40 @@ def verify_token(token: str, stored_hash: str) -> bool:
 def main():
     try:
         input_data = json.load(sys.stdin)
+        if not isinstance(input_data, dict):
+            sys.exit(1)
+
         username = input_data.get("user")
         password = input_data.get("pass")
 
+        # Type checking: ensure both username and password are non-empty strings
+        if not isinstance(username, str) or not isinstance(password, str):
+            sys.exit(1)
+
+        username = username.strip()
         if not username or not password or not os.path.exists(USERS_FILE):
+            sys.exit(1)
+
+        # Path traversal check: ensure username contains no path separator or parent dir tokens
+        if "/" in username or "\\" in username or ".." in username:
             sys.exit(1)
 
         with open(USERS_FILE, "r") as f:
             data = json.load(f)
 
         user_data = data.get("users", {}).get(username)
-        if not user_data or not user_data.get("enabled", True):
+        if not isinstance(user_data, dict) or not user_data.get("enabled", True):
             sys.exit(1)
 
         stored_hash = user_data.get("password")
-        if stored_hash and verify_token(password, stored_hash):
-            user_path = os.path.join(USERS_DIR, username)
+        if isinstance(stored_hash, str) and verify_token(password, stored_hash):
+            base_dir = os.path.realpath(USERS_DIR)
+            user_path = os.path.realpath(os.path.join(base_dir, username))
+
+            # Canonical path defense: verify user_path is strictly within USERS_DIR
+            if not user_path.startswith(base_dir + os.sep):
+                sys.exit(1)
+
             os.makedirs(user_path, exist_ok=True)
 
             # Return isolated jail root back to rclone

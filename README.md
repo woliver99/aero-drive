@@ -94,11 +94,11 @@ To build and launch AeroDrive locally with Podman or Docker:
 To manage users and passwords, you can `exec` into the running container directly using the `aerodrive` command:
 
 ```bash
-# Add a user (prompts for password; press Enter to auto-generate)
+# Add a user (prompts interactively for password; press Enter to auto-generate)
 podman exec -it aerodrive aerodrive user add woliver99
 
-# Set or reset password for an existing user
-podman exec -it aerodrive aerodrive user set-password woliver99
+# Update password for an existing user (prompts interactively; press Enter to auto-generate)
+podman exec -it aerodrive aerodrive user password woliver99
 
 # List registered users
 podman exec -it aerodrive aerodrive user list
