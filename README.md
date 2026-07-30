@@ -105,8 +105,8 @@ podman exec -it aerodrive aerodrive user list
 # Remove a user
 podman exec -it aerodrive aerodrive user remove woliver99
 
-# Add a user password with a note
-podman exec -it aerodrive aerodrive password add woliver99 mysecretpassword "thinkpad_laptop"
+# Add a user password (prompts for password; press Enter to auto-generate)
+podman exec -it aerodrive aerodrive password add woliver99 "thinkpad_laptop"
 
 # List user passwords
 podman exec -it aerodrive aerodrive password list woliver99

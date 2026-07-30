@@ -31,7 +31,7 @@ def print_usage(prog):
     print(f"  {prog} user remove <username>")
     print(f"  {prog} user list")
     print("\nPassword Commands:")
-    print(f"  {prog} password add <username> <password> [note]")
+    print(f"  {prog} password add <username> [note] [password]")
     print(f"  {prog} password remove <username> <note>")
     print(f"  {prog} password list <username>")
 
@@ -85,16 +85,44 @@ def main():
 
     elif category == "password":
         if action == "add":
-            if len(sys.argv) < 5:
-                print(f"Usage: {prog} password add <username> <password> [note]")
-                sys.exit(1)
-            username = sys.argv[3]
-            password = sys.argv[4]
-            note = sys.argv[5] if len(sys.argv) > 5 else "default"
+            import getpass
 
+            if len(sys.argv) < 4:
+                print(f"Usage: {prog} password add <username> [note] [password]")
+                sys.exit(1)
+
+            username = sys.argv[3]
             if username not in data["users"]:
                 print(f"User '{username}' does not exist.")
                 return
+
+            note = None
+            password = None
+
+            if len(sys.argv) == 4:
+                # aerodrive password add <username>
+                try:
+                    raw_note = input("Enter note/label [default]: ").strip()
+                    note = raw_note if raw_note else "default"
+                except (EOFError, KeyboardInterrupt):
+                    note = "default"
+            elif len(sys.argv) == 5:
+                # aerodrive password add <username> <note>
+                note = sys.argv[4]
+            else:
+                # aerodrive password add <username> <note> <password>
+                note = sys.argv[4]
+                password = sys.argv[5]
+
+            if not password:
+                try:
+                    entered = getpass.getpass(f"Enter password for '{username}' (leave blank to auto-generate): ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    entered = ""
+                if entered:
+                    password = entered
+                else:
+                    password = secrets.token_urlsafe(18)
 
             if "passwords" not in data["users"][username] or not isinstance(data["users"][username]["passwords"], dict):
                 data["users"][username]["passwords"] = {}
@@ -102,7 +130,9 @@ def main():
             pwd_hash = hash_password(password)
             data["users"][username]["passwords"][pwd_hash] = note
             save_data(data)
-            print(f"Password added for user '{username}' (Note: {note}).")
+
+            print(f"\nUser: {username} | Note: {note}")
+            print(f"PASSWORD: {password}\n")
 
         elif action in ("remove", "delete", "revoke"):
             if len(sys.argv) < 5:
