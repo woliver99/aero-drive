@@ -71,9 +71,7 @@ Location: `/var/lib/aerodrive/config/users.json`
   "users": {
     "woliver99": {
       "enabled": true,
-      "passwords": {
-        "scrypt:4a8e...:b9f1...": "thinkpad_laptop"
-      }
+      "password": "scrypt:4a8e...:b9f1..."
     }
   }
 }
@@ -96,23 +94,17 @@ To build and launch AeroDrive locally with Podman or Docker:
 To manage users and passwords, you can `exec` into the running container directly using the `aerodrive` command:
 
 ```bash
-# Add a user
+# Add a user (prompts for password; press Enter to auto-generate)
 podman exec -it aerodrive aerodrive user add woliver99
 
-# List users
+# Set or reset password for an existing user
+podman exec -it aerodrive aerodrive user set-password woliver99
+
+# List registered users
 podman exec -it aerodrive aerodrive user list
 
 # Remove a user
 podman exec -it aerodrive aerodrive user remove woliver99
-
-# Add a user password (prompts for password; press Enter to auto-generate)
-podman exec -it aerodrive aerodrive password add woliver99 "thinkpad_laptop"
-
-# List user passwords
-podman exec -it aerodrive aerodrive password list woliver99
-
-# Remove a password by note
-podman exec -it aerodrive aerodrive password remove woliver99 "thinkpad_laptop"
 ```
 
 Alternatively, if you enter an interactive container shell (`podman exec -it aerodrive sh`), you can run `aerodrive` directly from anywhere in the PATH.

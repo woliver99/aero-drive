@@ -37,20 +37,17 @@ def main():
         if not user_data or not user_data.get("enabled", True):
             sys.exit(1)
 
-        passwords = user_data.get("passwords", {})
-        if isinstance(passwords, dict):
-            for stored_hash in passwords.keys():
-                if verify_token(password, stored_hash):
-                    user_path = os.path.join(USERS_DIR, username)
-                    os.makedirs(user_path, exist_ok=True)
+        stored_hash = user_data.get("password")
+        if stored_hash and verify_token(password, stored_hash):
+            user_path = os.path.join(USERS_DIR, username)
+            os.makedirs(user_path, exist_ok=True)
 
-                    # Return isolated jail root back to rclone
-                    print(json.dumps({
-                        "type": "local",
-                        "_root": user_path
-                    }))
-                    sys.exit(0)
-
+            # Return isolated jail root back to rclone
+            print(json.dumps({
+                "type": "local",
+                "_root": user_path
+            }))
+            sys.exit(0)
     except Exception:
         pass
 
