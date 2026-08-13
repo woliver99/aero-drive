@@ -1,0 +1,11 @@
+services:
+  mapledrive:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mapledrive
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mapledrive_data:/var/lib/maple-drive
+    restart: unless-stopped

@@ -1,10 +1,8 @@
-# AeroDrive: Technical Specification & Architecture
+# MapleDrive
 
-**AeroDrive** is an ultra-lightweight, high-performance, containerized WebDAV storage server powered by `rclone serve webdav` and an internal Python auth proxy.
+**MapleDrive** is a simple, containerized WebDAV server powered by rclone and a JSON config.
 
----
-
-## 1. System Overview & Architecture
+## Architecture
 
 ```
   [ Client (WebDAV / NPM Reverse Proxy) ]
@@ -20,26 +18,25 @@
                      │
                      │  2. Verify scrypt hash against dictionary keys
                      v
-       [ /var/lib/aerodrive/config/users.json ]
+        [ /var/lib/maple-drive/config/users.json ]
                      │
                      │  3. Return JSON with root path
                      v
-   [ /var/lib/aerodrive/users/<username>/ ]
+    [ /var/lib/maple-drive/users/<username>/ ]
 ```
 
 ### Key Design Constraints
-- **Engine**: `rclone serve webdav` for direct POSIX disk I/O and low overhead.
-- **Dependencies**: Zero external Python libraries (uses Python 3 standard library only: `hashlib.scrypt`, `json`, `secrets`).
+- **Engine**: rclone
 - **Security**: Runs as any unprivileged UID/GID (e.g., `10000:10000`), drops all Linux capabilities (`--cap-drop=ALL`), and enforces `--security-opt=no-new-privileges`.
 
 ---
 
-## 2. Directory Structure
+## Directory Structure
 
-Inside the container (`/var/lib/aerodrive`):
+Inside the container (`/var/lib/maple-drive`):
 
 ```
-/var/lib/aerodrive/
+/var/lib/maple-drive/
 ├── config/
 │   ├── users.json      # Hashed user passwords and config schema
 │   ├── cert.pem        # TLS certificate
@@ -53,24 +50,19 @@ Application codebase (`/app/`):
 ```
 /app/
 ├── auth.py             # Auth proxy script called by rclone
-├── cli.py              # User & password management CLI
 └── entrypoint.sh       # Container initialization script
 ```
 
-Workspace helper:
-- `run.sh`: Builds and runs the AeroDrive container locally.
-
 ---
 
-## 3. Configuration Schema (`users.json`)
+## Configuration Schema (`users.json`)
 
-Location: `/var/lib/aerodrive/config/users.json`
+Location: `/var/lib/maple-drive/config/users.json`
 
 ```json
 {
   "users": {
     "woliver99": {
-      "enabled": true,
       "password": "scrypt:4a8e...:b9f1..."
     }
   }
@@ -79,87 +71,29 @@ Location: `/var/lib/aerodrive/config/users.json`
 
 ---
 
-## 4. Quick Start (`run.sh`)
+## Running & Management
 
-To build and launch AeroDrive locally with Podman or Docker:
-
+### Starting the Server
+Using Docker / Podman Compose:
 ```bash
-./run.sh
+./scripts/run.sh
+```
+Or directly with Compose:
+```bash
+podman compose up --build -d
+```
+
+### Running Integration Tests
+```bash
+./scripts/test.sh
 ```
 
 ---
 
-## 5. CLI Usage
+## Subpath Routing & Nginx Proxy Manager (NPM)
 
-To manage users and passwords, you can `exec` into the running container directly using the `aerodrive` command:
-
-```bash
-# Add a user (prompts interactively for password; press Enter to auto-generate)
-podman exec -it aerodrive aerodrive user add woliver99
-
-# Update password for an existing user (prompts interactively; press Enter to auto-generate)
-podman exec -it aerodrive aerodrive user password woliver99
-
-# List registered users
-podman exec -it aerodrive aerodrive user list
-
-# Remove a user
-podman exec -it aerodrive aerodrive user remove woliver99
-```
-
-Alternatively, if you enter an interactive container shell (`podman exec -it aerodrive sh`), you can run `aerodrive` directly from anywhere in the PATH.
-
----
-
-## 6. Subpath Routing & Nginx Proxy Manager (NPM)
-
-If you serve AeroDrive behind Nginx Proxy Manager or another reverse proxy under a subpath like `/dav/` (e.g. `https://example.com/dav/`), set the `BASE_URL` environment variable:
-
-```bash
-BASE_URL="/dav/" ./run.sh
-```
-
-Or in your container environment:
-```yaml
-environment:
-  - PORT=8080
-  - BASE_URL=/dav/
-```
+If you serve Maple Drive behind Nginx Proxy Manager or another reverse proxy under a subpath like `/dav/` (e.g. `https://example.com/dav/`), set the `BASE_URL` environment variable when running the container (e.g. `BASE_URL=/dav/`).
 
 This tells `rclone serve webdav` to expect incoming requests prefixed with `/dav/` and construct proper WebDAV XML link references.
 
----
-
-## 7. Deployment Specification (NixOS + Podman)
-
-```nix
-{ ... }:
-
-{
-  virtualisation.oci-containers.containers.aerodrive = {
-    image = "ghcr.io/yourusername/aerodrive:latest";
-    autoStart = true;
-
-    ports = [
-      "10102:8080" # HTTPS WebDAV endpoint
-    ];
-
-    environment = {
-      "PORT" = "8080";
-      "BASE_URL" = "/dav/"; # Optional: Set subpath for reverse proxies like NPM
-      "AERODRIVE_DATA_DIR" = "/var/lib/aerodrive";
-    };
-
-    volumes = [
-      "/srv/aerodrive:/var/lib/aerodrive"
-    ];
-
-    extraOptions = [
-      "--user=10000:10000"
-      "--security-opt=no-new-privileges"
-      "--cap-drop=ALL"
-    ];
-  };
-}
-```
 

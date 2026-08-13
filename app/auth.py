@@ -5,7 +5,7 @@ import os
 import hashlib
 import secrets
 
-DATA_DIR = os.environ.get("AERODRIVE_DATA_DIR", "/var/lib/aerodrive")
+DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/maple-drive")
 USERS_FILE = os.path.join(DATA_DIR, "config/users.json")
 USERS_DIR = os.path.join(DATA_DIR, "users")
 
@@ -46,7 +46,7 @@ def main():
             data = json.load(f)
 
         user_data = data.get("users", {}).get(username)
-        if not isinstance(user_data, dict) or not user_data.get("enabled", True):
+        if not isinstance(user_data, dict):
             sys.exit(1)
 
         stored_hash = user_data.get("password")

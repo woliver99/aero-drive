@@ -8,10 +8,10 @@ WORKDIR /app
 # Copy application scripts
 COPY app/ /app/
 
-# Make application executable and expose aerodrive CLI command
-RUN chmod -R 755 /app && ln -s /app/cli.py /usr/local/bin/aerodrive
+# Make application executable
+RUN chmod -R 755 /app
 
-ENV AERODRIVE_DATA_DIR="/var/lib/aerodrive"
+ENV DATA_DIR="/var/lib/maple-drive"
 ENV PORT="8080"
 ENV BASE_URL=""
 
